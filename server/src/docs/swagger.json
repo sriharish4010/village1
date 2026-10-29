@@ -1,0 +1,211 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Village1 — Local Village Shop Platform API",
+    "description": "Production REST API for Village1 connecting local customers, shopkeepers, and platform administrators across Tamil Nadu villages.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your short-lived JWT access token in the format: Bearer <token>"
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "data": { "type": "object" },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "details": { "type": "object" }
+            }
+          }
+        }
+      },
+      "RegisterShopRequest": {
+        "type": "object",
+        "required": ["name", "categoryId", "address", "village", "district", "pinCode", "phone"],
+        "properties": {
+          "name": { "type": "string", "example": "Sri Krishna Bakery" },
+          "categoryId": { "type": "string" },
+          "description": { "type": "string" },
+          "address": { "type": "string" },
+          "village": { "type": "string" },
+          "district": { "type": "string" },
+          "state": { "type": "string", "default": "Tamil Nadu" },
+          "pinCode": { "type": "string", "example": "625501" },
+          "phone": { "type": "string", "example": "9876543210" },
+          "email": { "type": "string", "format": "email" },
+          "openingHours": { "type": "string", "default": "08:00" },
+          "closingHours": { "type": "string", "default": "21:00" }
+        }
+      },
+      "RejectShopRequest": {
+        "type": "object",
+        "required": ["reason"],
+        "properties": {
+          "reason": { "type": "string", "example": "Incomplete trade license verification or unclear location address." }
+        }
+      },
+      "UserStatusRequest": {
+        "type": "object",
+        "required": ["isActive", "reason"],
+        "properties": {
+          "isActive": { "type": "boolean" },
+          "reason": { "type": "string", "example": "Administrative policy violation review." }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": ["System"],
+        "responses": { "200": { "description": "Server is healthy" } }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "summary": "Register a new Customer or Shopkeeper",
+        "tags": ["Authentication"],
+        "responses": { "201": { "description": "Registration successful" } }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Login with email or phone number",
+        "tags": ["Authentication"],
+        "responses": { "200": { "description": "Login successful" } }
+      }
+    },
+    "/api/v1/shops/public": {
+      "get": {
+        "summary": "List approved & active village shops (Public - no account required)",
+        "tags": ["Shops"],
+        "parameters": [
+          { "name": "village", "in": "query", "schema": { "type": "string" } },
+          { "name": "categoryId", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "List of active verified shops" } }
+      }
+    },
+    "/api/v1/shops/categories": {
+      "get": {
+        "summary": "Get shop categories",
+        "tags": ["Shops"],
+        "responses": { "200": { "description": "List of categories" } }
+      }
+    },
+    "/api/v1/shops": {
+      "post": {
+        "summary": "Register a new shop or branch (Enters PENDING approval status)",
+        "tags": ["Shops"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterShopRequest" } } }
+        },
+        "responses": { "201": { "description": "Shop registered in PENDING status" } }
+      }
+    },
+    "/api/v1/shops/my-shops": {
+      "get": {
+        "summary": "Get all shops managed by the authenticated user",
+        "tags": ["Shops"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "List of authorized shops and roles" } }
+      }
+    },
+    "/api/v1/admin/stats": {
+      "get": {
+        "summary": "Platform Overview Statistics (Admin Only)",
+        "tags": ["Super Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Genuine database counts and platform status" },
+          "403": { "description": "Forbidden - requires ADMIN role" }
+        }
+      }
+    },
+    "/api/v1/admin/shops": {
+      "get": {
+        "summary": "List all platform shops with verification status filter (Admin Only)",
+        "tags": ["Super Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Paginated shops list" } }
+      }
+    },
+    "/api/v1/admin/shops/{id}/approve": {
+      "put": {
+        "summary": "Approve shop application (Admin Only)",
+        "tags": ["Super Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Shop approved and marked active" } }
+      }
+    },
+    "/api/v1/admin/shops/{id}/reject": {
+      "put": {
+        "summary": "Reject shop application with reason (Admin Only)",
+        "tags": ["Super Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RejectShopRequest" } } }
+        },
+        "responses": { "200": { "description": "Shop rejected" } }
+      }
+    },
+    "/api/v1/admin/shops/{id}/suspend": {
+      "put": {
+        "summary": "Suspend shop (Admin Only)",
+        "tags": ["Super Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Shop suspended" } }
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "summary": "List all registered users (Admin Only)",
+        "tags": ["Super Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Paginated users list" } }
+      }
+    },
+    "/api/v1/admin/users/{id}/status": {
+      "put": {
+        "summary": "Activate or Deactivate user account (Admin Only)",
+        "tags": ["Super Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserStatusRequest" } } }
+        },
+        "responses": { "200": { "description": "User status updated" } }
+      }
+    },
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "summary": "View platform audit logs (Admin Only)",
+        "tags": ["Super Admin"],
+        "security": [{ "BearerAuth": [] }],
+        "responses": { "200": { "description": "Audit log entries" } }
+      }
+    }
+  }
+}

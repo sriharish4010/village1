@@ -1,0 +1,27 @@
+{
+  "name": "village1",
+  "version": "1.0.0",
+  "description": "Village1 — All-in-One Local Village Shop Platform",
+  "private": true,
+  "workspaces": [
+    "server",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:server": "npm --workspace=server run dev",
+    "dev:web": "npm --workspace=apps/web run dev",
+    "build:server": "npm --workspace=server run build",
+    "build:web": "npm --workspace=apps/web run build",
+    "test:server": "npm --workspace=server run test"
+  },
+  "keywords": [
+    "village1",
+    "local-commerce",
+    "village-commerce",
+    "express",
+    "react",
+    "prisma"
+  ],
+  "author": "Village1 Engineering Team",
+  "license": "UNLICENSED"
+}
